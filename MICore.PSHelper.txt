@@ -1,0 +1,20 @@
+Connect-MICore: connect to MobileIron Core and save encrypted credients in registry
+	-coreHost mandatory, hostname of Core to connect to
+	-apiUser mandatory, username of api with required api permissions
+
+Disconnect-MICore: clears cached Core credientials
+
+Get-MIDeviceLabel: retreive a list of labels for a device
+	-uuid mandatory, uuid of device to retreive labels
+
+Add-MIDeviceLabel: add a static label to a device
+	-uuid mandatory, uuid of device to add label
+	-name mandatory, name of label to add
+
+Copy-MIDeviceLabels: apply set of static label from device or a textfile to another device
+	-uuid mandatory if not using -file, source device uuid
+	-file mandatory if not using -uuid, textfile containg list of label names
+	-target mandatory, target device uuid
+
+Get-MIDevice: retreive a set of managed device information
+	-uuid optional, uuid of single device, otherwise returns all managed devices
