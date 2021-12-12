@@ -22,16 +22,6 @@ function New-SecureItemProperty {
     New-ItemProperty -Path $path -Name $name -Value $encrypted -Force
 }
 
-function Unprotect-SecureItemProperty {
-    param(
-        [Parameter(Mandatory=$true)][string]$value
-    )
-    $decrypted = [System.Security.Cryptography.ProtectedData]::Unprotect($encrypted, `
-        $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
-    $decrypted | % { $plaintext += [char] $_} | Out-Null
-    $plaintext
-}
-
 function Connect-MICore {
     param(
         [Parameter(Mandatory=$true)][string]$coreHost,
@@ -125,6 +115,10 @@ function Get-MIDevice {
     } else {
         $response.devices.device
     }
+}
+
+function Get-MICommand {
+    Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"}
 }
 
 # get values for API access

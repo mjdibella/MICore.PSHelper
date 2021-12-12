@@ -18,3 +18,5 @@ Copy-MIDeviceLabels: apply set of static label from device or a text file to ano
 
 Get-MIDevice: retrieve a set of managed device information
 	-uuid optional, uuid of single device, otherwise returns all managed devices
+
+Get-MICommand: lists commands exported from the module
