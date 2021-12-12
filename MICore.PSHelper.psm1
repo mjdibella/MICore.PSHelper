@@ -1,30 +1,56 @@
 Add-Type -AssemblyName System.Security
 Add-Type -AssemblyName System.Web
 
+function Read-HostSecure {
+    param(
+        [Parameter(Mandatory=$true)][string]$prompt
+    )
+    $securedValue = Read-Host -prompt $prompt -AsSecureString
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securedValue)
+    [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+}
+
+function New-SecureItemProperty {
+    param(
+        [Parameter(Mandatory=$true)][string]$path,
+        [Parameter(Mandatory=$true)][string]$name,
+        [Parameter(Mandatory=$true)][string]$value
+    )
+    $tempArray = $value.ToCharArray() | % {[byte] $_}
+    $encrypted = [System.Security.Cryptography.ProtectedData]::Protect($tempArray, `
+        $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    New-ItemProperty -Path $path -Name $name -Value $encrypted -Force
+}
+
+function Unprotect-SecureItemProperty {
+    param(
+        [Parameter(Mandatory=$true)][string]$value
+    )
+    $decrypted = [System.Security.Cryptography.ProtectedData]::Unprotect($encrypted, `
+        $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    $decrypted | % { $plaintext += [char] $_} | Out-Null
+    $plaintext
+}
+
 function Connect-MICore {
     param(
         [Parameter(Mandatory=$true)][string]$coreHost,
         [Parameter(Mandatory=$true)][string]$apiUser
     )
-    $apiPass = Read-Host -prompt "Password for Core API"
-    $tempArray = $apiPass.ToCharArray() | % {[byte] $_}
-    $encrypted = [System.Security.Cryptography.ProtectedData]::Protect($tempArray, `
-        $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
+    $apiPass = Read-HostSecure -prompt "Password"
+    $global:coreHost = $coreHost
+    $global:apiCredential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($apiUser + ":" + $apiPass))
     New-Item -Path $global:registryURL -Force | Out-null
     New-ItemProperty -Path $global:registryURL -Name CoreHost -Value $coreHost -Force | Out-Null
-    New-ItemProperty -Path $global:registryURL -Name ApiUser -Value $apiUser -Force | Out-Null
-    New-ItemProperty -Path $global:registryURL -Name ApiPass -Value $encrypted -Force | Out-Null
-    $global:coreHost = $coreHost
-    $global:apiCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($apiUser + ":" + $apiPass))
-    Write-host "Connected to $global:coreHost"
+    New-SecureItemProperty -Path $global:registryURL -Name ApiCredential -Value $apiCredential | Out-Null
+    Write-host "Connected to $global:coreHost`n"
 }
 
 function Disconnect-MICore {
     Remove-ItemProperty -Path $global:registryURL -Name CoreHost | Out-Null
-    Remove-ItemProperty -Path $global:registryURL -Name ApiUser | Out-Null
-    Remove-ItemProperty -Path $global:registryURL -Name ApiPass | Out-Null
+    Remove-ItemProperty -Path $global:registryURL -Name ApiCredential | Out-Null
     $global:coreHost = $null
-    $global:apiCredentials = $null
+    $global:apiCredential = $null
 }
 
 function Get-MIDeviceLabel {
@@ -34,7 +60,7 @@ function Get-MIDeviceLabel {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $uri = 'https://' + $global:coreHost + '/api/v2/devices/' + $Uuid + '/labels?adminDeviceSpaceId=1'
     $uri = [uri]::EscapeUriString($uri)
-    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredentials"}
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
     $response = ConvertFrom-JSON $webresponse.Content
     $response.results
 }
@@ -48,7 +74,7 @@ function Add-MIDeviceLabel {
     $uri = 'https://' + $global:coreHost + '/api/v2/devices/labels/' + $name + '/add?adminDeviceSpaceId=1'
     $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
     $uri = [uri]::EscapeUriString($uri)
-        $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredentials"} -body $body -method PUT -contentType application/json
+        $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method PUT -contentType application/json
     $response = ConvertFrom-JSON $webresponse.Content
     $response.results.records.device
 }
@@ -91,7 +117,7 @@ function Get-MIDevice {
         $uri = $uri + "/" + $uuid
     }
     $uri = [uri]::EscapeUriString($uri)
-    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredentials"}
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
     $response = ConvertFrom-JSON $webresponse.Content
 
     if ($uuid) {
@@ -103,16 +129,16 @@ function Get-MIDevice {
 
 # get values for API access
 $global:registryURL = "HKCU:\Software\MobileIron\MICore.PSHelper"
-$registryKey = (Get-ItemProperty -Path $registryURL -ErrorAction SilentlyContinue)
-if ($registryKey -eq $null) {
+$global:registryKey = (Get-ItemProperty -Path $global:registryURL -ErrorAction SilentlyContinue)
+$global:registryKey
+if ($global:registryKey -eq $null) {
     Write-Warning "Autoconnect failed.  API key not found in registry.  Use Connect-MICore to connect manually."
 } else {
-    $encrypted = $registryKey.apiPass
+    $global:coreHost = $global:registryKey.CoreHost
+    $encrypted = $registryKey.ApiCredential
     $decrypted = [System.Security.Cryptography.ProtectedData]::Unprotect($encrypted, `
         $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
-    $decrypted | % { $apiPass += [char] $_} | Out-Null
-    $global:coreHost = $registryKey.CoreHost
-    $global:apiCredentials = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($registryKey.apiUser + ":" + $apiPass))
+    $decrypted | % { $global:apiCredential += [char] $_} | Out-Null
     Write-host "Connected to $global:coreHost"
 }
-Write-host "Cmdlets added: $(Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"})"
+Write-host "Cmdlets added: $(Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"})`n"
