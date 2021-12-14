@@ -34,6 +34,85 @@ function Disconnect-MICore {
     $global:apiCredential = $null
 }
 
+function Get-MILabel {
+    param(
+        [Parameter(Mandatory=$false)][string]$labelId
+    )
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    if ($labelId) {
+        $uri = 'https://' + $global:coreHost + '/api/v2/labels/' + $labelId + '?adminDeviceSpaceId=1'
+    } else {
+        $uri = 'https://' + $global:coreHost + '/api/v2/labels/label_summary?adminDeviceSpaceId=1'
+    }
+    $uri = [uri]::EscapeUriString($uri)
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
+function New-MIStaticLabel {
+    param(
+        [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$name,
+        [parameter(Mandatory=$false)][string[]]$description
+    )
+    begin {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $report = @()
+    }
+    process {
+        if ($name) {
+            foreach ($label in $name) {
+                $body = '{"name": "' + $name + '","description": "' + $description + '","deviceSpaceId": 1,"static": true}'
+                $uri = 'https://' + $global:coreHost + '/api/v2/labels/?adminDeviceSpaceId=1'
+                $uri = [uri]::EscapeUriString($uri)
+                $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method POST -contentType application/json
+                $response = ConvertFrom-JSON $webresponse.Content
+                $resultHash = [ordered]@{
+                    id = $response.results.id
+                    message = $response.results.name
+                    staticLabel = $response.results.staticLabel
+                }
+                $PSresult = New-Object PSObject -Property $resultHash
+                $report += $PSresult
+            }
+        }
+    }
+    end {
+        $report
+    }
+}
+
+function Remove-MILabel {
+    param(
+        [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$labelId,
+        [parameter(Mandatory=$true)][string]$reason
+    )
+    begin {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $report = @()
+    }
+    process {
+        if ($labelId) {
+            foreach ($id in $labelId) {
+                $body = '{"reason": "' + $reason + '","labelIds":[' + $labelId + '],"deviceSpaceId": 1}'
+                $uri = 'https://' + $global:coreHost + '/api/v2/labels/?adminDeviceSpaceId=1'
+                $uri = [uri]::EscapeUriString($uri)
+                $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method DELETE -contentType application/json
+                $resultHash = [ordered]@{
+                    id = $id
+                    reason = $reason
+                    statusCode = $webResponse.statusCode
+                }
+                $PSresult = New-Object PSObject -Property $resultHash
+                $report += $PSresult
+            }
+        }
+    }
+    end {
+        $report
+    }
+}
+
 function Get-MIDeviceLabel {
     param(
         [Parameter(Mandatory=$true)][string]$Uuid
@@ -52,10 +131,9 @@ function Add-MIDeviceLabel {
         [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$name
     )
     begin {
-        $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
+        $body = '{"deviceUuids": ["' + $Uuid + '"]}'
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $report = @()
-        $labelCount = 0
     }
     process {
         if ($name) {
@@ -85,7 +163,7 @@ function Remove-MIDeviceLabel {
         [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$name
     )
     begin {
-        $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
+        $body = '{"deviceUuids": ["' + $Uuid + '"]}'
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $report = @()
     }

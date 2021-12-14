@@ -4,31 +4,42 @@ Connect-MICore: connect to MobileIron Core and save encrypted credentials in reg
 
 Disconnect-MICore: clears cached Core credentials
 
+Get-MILabel: retreives a list of labels or a specific label
+	-labelId optional, retreives info for the specified label
+
+New-MIStaticLabel: creates a new static label
+	-name optional or via pipeline, name of label to add
+	-description optional, label description
+
+Remove-MILabel
+	-labelId optional or via pipeline, Id of label to remove
+	-reason mandatory, reason for deletion
+
 Add-MIDevice: register a new device to MobileIron Core
-	-uuid: mandatory unless phoneNumber, userId, platfrom, and deviceType are 
+	-uuid mandatory unless phoneNumber, userId, platfrom, and deviceType are 
 		specified, registers a new device using the specified device parameters 
 		as a template, copys all static lables from the specific device to the 
 		new registration unless the noLabels switch is specified
-	-noLables: optional, switch, when specified with the uuid paramters, labels are copies, otherwise ignored
-	-phoneNumber: mandatory unless uuid is specified, creates a new registration record 
+	-noLables optional, switch, when specified with the uuid paramters, labels are copies, otherwise ignored
+	-phoneNumber mandatory unless uuid is specified, creates a new registration record 
 		with the specified phone number
-	-userId: mandatory unless uuid is specified, creates a new registration record with the specified 
+	-userId mandatory unless uuid is specified, creates a new registration record with the specified 
 		userId
-        -operator: optional, creates a new registration record with the specified operator
-	-isEmployeeOwned: mandatory unless uuid is specified, boolean, creates a new registration record with the
+        -operator optional, creates a new registration record with the specified operator
+	-isEmployeeOwned mandatory unless uuid is specified, boolean, creates a new registration record with the
 		specified ownership
-	-platform: mandatory unless uuid is specified, creates a new registration record with the specified 
+	-platform mandatory unless uuid is specified, creates a new registration record with the specified 
 		platform
-	-deviceType: mandatory unless uuid is specified, creates a new registration record with the specified 
+	-deviceType mandatory unless uuid is specified, creates a new registration record with the specified 
 		deviceType
-	-localUser: optional switch, creates a new registration record for the local user specified by userId,
+	-localUser optional switch, creates a new registration record for the local user specified by userId,
 		otherwise create a registration linked to an LDAP user
-        -userFirstName: optional but required when creating new local user
-        -userLastName: optional but required when creating new local user
-        -userEmailAddress: optional but required when creating new local user
-        -notifyUser: optional switch, notifies user of registration via email
-        -notifyuserbysms: optional switch, notifies user of registration via SMS
-        -countryCode: optional, specified dialing plan country code, defaults to "1"
+        -userFirstName optional but required when creating new local user
+        -userLastName optional but required when creating new local user
+        -userEmailAddress optional but required when creating new local user
+        -notifyUser optional switch, notifies user of registration via email
+        -notifyuserbysms optional switch, notifies user of registration via SMS
+        -countryCode optional, specified dialing plan country code, defaults to "1"
 
 Get-MIDeviceLabel: retrieve a list of labels for a device
 	-uuid mandatory, uuid of device to retrieve labels
