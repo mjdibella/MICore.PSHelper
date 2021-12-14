@@ -5,7 +5,7 @@ Connect-MICore: connect to MobileIron Core and save encrypted credentials in reg
 Disconnect-MICore: clears cached Core credentials
 
 Add-MIDevice: register a new device to MobileIron Core
-        -uuid: mandatory unless phoneNumber, userId, platfrom, and deviceType are 
+	-uuid: mandatory unless phoneNumber, userId, platfrom, and deviceType are 
 		specified, registers a new device using the specified device parameters 
 		as a template, copys all static lables from the specific device to the 
 		new registration unless the noLabels switch is specified
@@ -35,7 +35,11 @@ Get-MIDeviceLabel: retrieve a list of labels for a device
 
 Add-MIDeviceLabel: add a static label to a device
 	-uuid mandatory, uuid of device to add label
-	-name mandatory, name of label to add
+	-name optional or via pipeline, name of label to add
+
+Remove-MIDeviceLabel: remove a static label from a device
+	-uuid mandatory, uuid of device to rremove label
+	-name optional or via pipeline, name of label to remove
 
 Copy-MIDeviceLabels: apply set of static label from device or a text file to another device
 	-uuid mandatory if not using -file, source device uuid

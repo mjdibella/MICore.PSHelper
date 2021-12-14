@@ -49,15 +49,65 @@ function Get-MIDeviceLabel {
 function Add-MIDeviceLabel {
     param(
         [Parameter(Mandatory=$true)][string]$Uuid,
-        [Parameter(Mandatory=$true)][string]$name
+        [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$name
     )
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $uri = 'https://' + $global:coreHost + '/api/v2/devices/labels/' + $name + '/add?adminDeviceSpaceId=1'
-    $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
-    $uri = [uri]::EscapeUriString($uri)
-    $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method PUT -contentType application/json
-    $response = ConvertFrom-JSON $webresponse.Content
-    $response.results.records.device
+    begin {
+        $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $report = @()
+        $labelCount = 0
+    }
+    process {
+        if ($name) {
+            foreach ($label in $name) {
+                $uri = 'https://' + $global:coreHost + '/api/v2/devices/labels/' + $label + '/add?adminDeviceSpaceId=1'
+                $uri = [uri]::EscapeUriString($uri)
+                $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method PUT -contentType application/json
+                $response = ConvertFrom-JSON $webresponse.Content
+                $resultHash = [ordered]@{
+                    label = $response.results.records.label
+                    message = $response.results.records.device.message
+                    failureCode = $response.results.records.device.failureCode
+                }
+                $PSresult = New-Object PSObject -Property $resultHash
+                $report += $PSresult
+            }
+        }
+    }
+    end {
+        $report
+    }
+}
+
+function Remove-MIDeviceLabel {
+    param(
+        [Parameter(Mandatory=$true)][string]$Uuid,
+        [parameter(Mandatory=$false,ValueFromPipeline=$true)][string[]]$name
+    )
+    begin {
+        $body = $jsonBlock + '{"deviceUuids": ["' + $Uuid + '"]}'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $report = @()
+    }
+    process {
+        if ($name) {
+            foreach ($label in $name) {
+                $uri = 'https://' + $global:coreHost + '/api/v2/devices/labels/' + $label + '/remove?adminDeviceSpaceId=1'
+                $uri = [uri]::EscapeUriString($uri)
+                $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -body $body -method PUT -contentType application/json
+                $response = ConvertFrom-JSON $webresponse.Content
+                $resultHash = [ordered]@{
+                    label = $label
+                    successful = $response.successful
+                }
+                $PSresult = New-Object PSObject -Property $resultHash
+                $report += $PSresult
+            }
+        }
+    }
+    end {
+        $report
+    }
 }
 
 function Copy-MIDeviceLabels {
@@ -100,7 +150,6 @@ function Get-MIDevice {
     $uri = [uri]::EscapeUriString($uri)
     $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
     $response = ConvertFrom-JSON $webresponse.Content
-
     if ($uuid) {
         $response.device
     } else {
@@ -123,7 +172,7 @@ function New-MIDevice {
         [Parameter(Mandatory=$false)][string]$userLastName,
         [Parameter(Mandatory=$false)][string]$userEmailAddress,
         [Parameter(Mandatory=$false)][switch]$notifyUser,
-        [Parameter(Mandatory=$false)][switch]$notifyuserbysms = $False,
+        [Parameter(Mandatory=$false)][switch]$notifyuserbysms,
         [Parameter(Mandatory=$false)][string]$countryCode = "1"
 
     )
@@ -195,8 +244,7 @@ function New-MIDevice {
     $uri = $uri + '&notifyuserbysms=' + $notifyuserbysms
     $uri = $uri + '&countryCode=' + $countryCode
     try {
-        $uri
-        #$webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -method PUT 
+        $webresponse = invoke-webrequest -uri $uri -headers @{"Authorization" = "Basic $global:apiCredential"} -method PUT 
         $registerResult = (ConvertFrom-JSON $webresponse.Content).registration
         if (($registerResult.status -eq 'SUCESS') -or ($registerResult.status -eq 'SUCCESS')) {
             if (($uuid) -and (-Not $noLabels)) {
