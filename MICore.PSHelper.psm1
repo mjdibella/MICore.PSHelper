@@ -1,21 +1,14 @@
 Add-Type -AssemblyName System.Security
 Add-Type -AssemblyName System.Web
 
-function Read-HostSecure {
-    param(
-        [Parameter(Mandatory=$true)][string]$prompt
-    )
-    $securedValue = Read-Host -prompt $prompt -AsSecureString
-    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securedValue)
-    [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-}
-
 function Connect-MICore {
     param(
         [Parameter(Mandatory=$true)][string]$coreHost,
         [Parameter(Mandatory=$true)][string]$apiUser
     )
-    $apiPass = Read-HostSecure -prompt "Password"
+    $securedValue = Read-Host -prompt "Password" -AsSecureString
+    $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($securedValue)
+    $apiPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
     $global:coreHost = $coreHost
     $global:apiCredential = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes($apiUser + ":" + $apiPass))
     $tempArray = $global:apiCredential.ToCharArray() | % {[byte] $_}
@@ -24,7 +17,7 @@ function Connect-MICore {
     New-Item -Path $global:registryURL -Force | Out-null
     New-ItemProperty -Path $global:registryURL -Name CoreHost -Value $coreHost -Force | Out-Null
     New-ItemProperty -Path $global:registryURL -Name ApiCredential -Value $encrypted | Out-Null
-    Write-host "Connected to $global:coreHost`n"
+    Write-host "Connected to MobileIron Core $global:coreHost`n"
 }
 
 function Disconnect-MICore {
@@ -363,6 +356,6 @@ if ($global:registryKey -eq $null) {
         $null, [System.Security.Cryptography.DataProtectionScope]::CurrentUser)
     $decrypted | % { $apiBase64 += [char] $_} | Out-Null
     $global:apiCredential = $apiBase64
-    Write-host "Connected to $global:coreHost"
+    Write-host "Connected to MobileIron Core $global:coreHost`n"
 }
-Write-host "Cmdlets added: $(Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"})`n"
+Write-host "Cmdlets added:`n$(Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"})`n"
