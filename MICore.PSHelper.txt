@@ -4,8 +4,8 @@ Connect-MICore: connect to MobileIron Core and save encrypted credentials in reg
 
 Disconnect-MICore: clears cached Core credentials
 
-Get-MILabel: retreives a list of labels or a specific label
-	-labelId optional, retreives info for the specified label
+Get-MILabel: retrieves a list of labels or a specific label
+	-labelId optional, retrieves info for the specified label
 
 New-MIStaticLabel: creates a new static label
 	-name optional or via pipeline, name of label to add
@@ -61,3 +61,18 @@ Get-MIDevice: retrieve a set of managed device information
 	-uuid optional, uuid of single device, otherwise returns all managed devices
 
 Get-MICommand: lists commands exported from the module
+
+Get-MICatalogApp: retrieves a list of apps in the catalog or info on a specific app in the catalog
+	-appId optional, retrieves info for the specified app
+
+Get-MIUser: retrieves a list of authorized users or info on a specific user
+	-searchString optional, retrives info for users matching the string
+
+Get-MILdapUser: retrieves info about LDAP users matching the search string
+	-searchString mandatory, the search string
+
+Get-MILdapGroup: retrieves info about LDAP groups matching the search string
+	-searchString mandatory, the search string
+
+Get-MILdapOu: retrieves info about OUs matching the search string
+	-searchString mandatory, the search string
