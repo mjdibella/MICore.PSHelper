@@ -220,12 +220,15 @@ function Get-MIDevice {
     }
     $uri = [uri]::EscapeUriString($uri)
     $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
-    $response = ConvertFrom-JSON $webresponse.Content
+    $content = ConvertFrom-JSON $webresponse.Content
     if ($uuid) {
-        $response.device
+        $response = $content.device
+        $response | Add-member -NotePropertyName labels -NotePropertyValue (Get-MIDeviceLabel -uuid $uuid)
+
     } else {
-        $response.devices.device
+        $response = $content.devices.device
     }
+    $response
 }
 
 function New-MIDevice {
@@ -342,6 +345,69 @@ function Get-MICommand {
     Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"}
 }
 
+function Get-MICatalogApp {
+    param(
+        [Parameter(Mandatory=$false)][string]$appId
+    )
+    if ($appId) {
+        $uri = "https://$global:coreHost/api/v2/appstore/apps/" + $appId + "?adminDeviceSpaceId=1"
+    } else {
+        $uri = "https://$global:coreHost/api/v2/appstore/apps?adminDeviceSpaceId=1"
+    }
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
+function Get-MIUser {
+    param(
+        [Parameter(Mandatory=$false)][string]$searchString
+    )
+    if ($searchString) {
+        $uri = "https://$global:coreHost/api/v2/authorized/users?query=" + $searchString + "&adminDeviceSpaceId=1"
+    } else {
+        $uri = "https://$global:coreHost/api/v2/authorized/users?adminDeviceSpaceId=1"
+    }
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
+function Get-MILdapUser {
+    param(
+        [Parameter(Mandatory=$true)][string]$searchString
+    )
+    $uri = "https://$global:coreHost/api/v2/admins/ldap_entities?type=user&query=" + $searchString + "&adminDeviceSpaceId=1"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
+function Get-MILdapGroup {
+    param(
+        [Parameter(Mandatory=$true)][string]$searchString
+    )
+    $uri = "https://$global:coreHost/api/v2/admins/ldap_entities?type=group&query=" + $searchString + "&adminDeviceSpaceId=1"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
+function Get-MILdapOu {
+    param(
+        [Parameter(Mandatory=$true)][string]$searchString
+    )
+    $uri = "https://$global:coreHost/api/v2/admins/ldap_entities?type=ou&query=" + $searchString + "&adminDeviceSpaceId=1"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $webresponse = invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}
+    $response = ConvertFrom-JSON $webresponse.Content
+    $response.results
+}
+
 # get values for API access
 $global:registryURL = "HKCU:\Software\MobileIron\MICore.PSHelper"
 $global:registryKey = (Get-ItemProperty -Path $global:registryURL -ErrorAction SilentlyContinue)
@@ -358,4 +424,4 @@ if ($global:registryKey -eq $null) {
     $global:apiCredential = $apiBase64
     Write-host "Connected to MobileIron Core $global:coreHost`n"
 }
-Write-host "Cmdlets added:`n$(Get-Command | where {$_.ModuleName -eq "MICore.PSHelper"})`n"
+Write-host "Cmdlets added:`n$(Get-Command | where {$_.ModuleName -eq 'MICore.PSHelper'}).name`n"
