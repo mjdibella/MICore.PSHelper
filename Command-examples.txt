@@ -1,0 +1,2 @@
+Get list of device for a particular user sorted by last check-in:
+get-midevice | where-object {$_.principal -eq "username"} | sort-object -property lastconnectedAt | ft userDisplayName, model, platform, lastConnectedAt -autosize
