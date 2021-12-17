@@ -1,2 +1,5 @@
 Get list of device for a particular user sorted by last check-in:
 get-midevice | where-object {$_.principal -eq "username"} | sort-object -property lastconnectedAt | ft userDisplayName, model, platform, lastConnectedAt -autosize
+
+Register a device device based on the configuration and label for another users "iPhone 12 Pro"
+new-midevice -uuid $(get-midevice | where-object {($_.principal -eq "username") -and ($_.model -eq "iPhone 12 Pro")}).uuid
