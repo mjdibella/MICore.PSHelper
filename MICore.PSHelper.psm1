@@ -439,4 +439,4 @@ if ($global:registryKey -eq $null) {
     $global:apiCredential = $apiBase64
     Write-host "Connected to MobileIron Core $global:coreHost`n"
 }
-Write-host "Cmdlets added:`n$(Get-Command | where {$_.ModuleName -eq 'MICore.PSHelper'}).name`n"
+Write-host "Cmdlets added:`n$(Get-Command | where {$_.ModuleName -eq 'MICore.PSHelper'})`n"
