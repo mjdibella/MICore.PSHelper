@@ -4,6 +4,8 @@ Connect-MICore: connect to MobileIron Core and save encrypted credentials in reg
 
 Disconnect-MICore: clears cached Core credentials
 
+Get-MICore: retrieves Core health status
+
 Get-MILabel: retrieves a list of labels or a specific label
 	-labelId optional, retrieves info for the specified label
 

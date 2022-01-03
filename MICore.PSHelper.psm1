@@ -17,7 +17,7 @@ function Connect-MICore {
     New-Item -Path $global:registryURL -Force | Out-null
     New-ItemProperty -Path $global:registryURL -Name CoreHost -Value $coreHost -Force | Out-Null
     New-ItemProperty -Path $global:registryURL -Name ApiCredential -Value $encrypted | Out-Null
-    Write-host "Connected to MobileIron Core $global:coreHost`n"
+    Get-MICore
 }
 
 function Disconnect-MICore {
@@ -25,6 +25,21 @@ function Disconnect-MICore {
     Remove-ItemProperty -Path $global:registryURL -Name ApiCredential | Out-Null
     $global:coreHost = $null
     $global:apiCredential = $null
+}
+
+function Get-MICore {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $uri = 'https://' + $global:coreHost + '/status/status.html'
+    $webresponse = (invoke-webrequest -uri $uri -method Get -headers @{"Authorization" = "Basic $global:apiCredential"}).Content
+    $response = @()
+    $response = $webresponse.Split([Environment]::NewLine)
+    $hash = [ordered]@{
+        Host = $global:coreHost
+        Status = $response[0]
+        Message = $response[2]
+    }
+    $result = New-Object PSObject -Property $hash
+    $result
 }
 
 function Get-MILabel {
