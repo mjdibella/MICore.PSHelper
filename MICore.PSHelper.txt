@@ -22,7 +22,7 @@ Add-MIDevice: register a new device to MobileIron Core
 		specified, registers a new device using the specified device parameters 
 		as a template, copys all static lables from the specific device to the 
 		new registration unless the noLabels switch is specified
-	-noLables optional, switch, when specified with the uuid paramters, labels are copies, otherwise ignored
+	-noLabels optional, switch, when specified with the uuid paramters, labels are copies, otherwise ignored
 	-phoneNumber mandatory unless uuid is specified, creates a new registration record 
 		with the specified phone number
 	-userId mandatory unless uuid is specified, creates a new registration record with the specified 
