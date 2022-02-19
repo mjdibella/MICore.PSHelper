@@ -17,7 +17,7 @@ Remove-MILabel
 	-labelId optional or via pipeline, Id of label to remove
 	-reason mandatory, reason for deletion
 
-Add-MIDevice: register a new device to MobileIron Core
+New-MIDevice: register a new device to MobileIron Core
 	-uuid mandatory unless phoneNumber, userId, platfrom, and deviceType are 
 		specified, registers a new device using the specified device parameters 
 		as a template, copys all static lables from the specific device to the 

@@ -270,12 +270,12 @@ function New-MIDevice {
         $device = get-MIDevice -uuid $uuid
         if ($device) {
             if (-Not $platfrom) {
-                $platformName = ((Get-MIDevice -uuid ef9c1a62-446b-4fb0-a333-5cd4658c6475).details.entry | where {$_.key -eq "platform"}).Value
+                $platformName = ((Get-MIDevice -uuid $uuid).details.entry | where {$_.key -eq "platform"}).Value
                 switch ($platformName) {
                     "iPhone" {$platform = "I"}
                     "iOS" {$platform = "I"}
-                    "macOS" {$platform = "I"}
-                    "Android" {$platform = "I"}
+                    "macOS" {$platform = "L"}
+                    "Android" {$platform = "A"}
                     default {
                         $windowsType = ((Get-MIDevice).details.entry | where {$_.key -eq "wp_os_platform"}).value
                         if ($windowsType) {
